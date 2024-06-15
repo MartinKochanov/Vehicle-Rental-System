@@ -6,10 +6,14 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
-import static demo.constants.OutputMessages.*;
+import static demo.constants.InvoiceOutputMessages.*;
 import static demo.constants.Scales.ROUNDING_SCALE;
-import static demo.utils.CalculationUtils.setTotalRentCost;
+import static demo.utils.CalculationUtils.*;
 
+/**
+ * The Rental class represents a rental transaction for a Vehicle.
+ * It generates an invoice detailing the rental information and costs.
+ */
 public
 class Rental {
 
@@ -21,9 +25,10 @@ class Rental {
     private final int actualRentalDays;
     private final BigDecimal totalRent;
 
-    public Rental(String customerName, Vehicle vehicle, LocalDate actualReturnDate) {
+
+    public Rental(String customerName, Vehicle vehicle, LocalDate actualReturnDate, LocalDate rentalStartDate) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        this.reservationDate = LocalDate.parse(LocalDate.now().format(formatter));
+        this.reservationDate = LocalDate.parse(rentalStartDate.format(formatter));
         this.returnDate = reservationDate.plusDays(vehicle.getRentalPeriod());
         this.customerName = customerName;
         this.vehicle = vehicle;
@@ -33,18 +38,20 @@ class Rental {
     }
 
 
-
     private String getCustomerName() {
         return customerName;
     }
+
 
     private LocalDate getReservationDate() {
         return reservationDate;
     }
 
+
     private LocalDate getReturnDate() {
         return returnDate;
     }
+
 
     private LocalDate getActualReturnDate() {
         return actualReturnDate;
@@ -55,11 +62,18 @@ class Rental {
         return actualRentalDays;
     }
 
+    /**
+     * Generates an invoice detailing the rental information and costs.
+     *
+     * @return A formatted string representing the rental invoice.
+     */
     public String invoice() {
         StringBuilder sb = new StringBuilder();
         String separator = System.lineSeparator();
         BigDecimal insuranceCostPerDay = BigDecimal.ZERO;
         BigDecimal totalInsuranceCost;
+        BigDecimal total;
+        boolean isRentalDiscount = actualRentalDays < vehicle.getRentalPeriod();
 
         sb.append(INVOICE_SEPARATOR).append(separator);
         sb.append(DATE_LABEL).append(getActualReturnDate()).append(separator);
@@ -107,9 +121,7 @@ class Rental {
 
                 sb.append(INITIAL_INSURANCE_PER_DAY_LABEL).append(cargoVan.getInitialInsuranceCostPerDay()).append(separator);
                 sb.append(INSURANCE_DISCOUNT_PER_DAY_LABEL).append(cargoVan.getInsuranceDiscountPerDay()).append(separator);
-                sb.append(INSURANCE_PER_DAY_LABEL)
-                        .append(insuranceCostPerDay)
-                        .append(separator);
+                sb.append(INSURANCE_PER_DAY_LABEL).append(insuranceCostPerDay).append(separator);
 
             } else {
                 sb.append(INSURANCE_PER_DAY_LABEL).append(cargoVan.getInitialInsuranceCostPerDay()).append(separator);
@@ -124,10 +136,8 @@ class Rental {
                         .setScale(ROUNDING_SCALE, RoundingMode.CEILING);
 
                 sb.append(INITIAL_INSURANCE_PER_DAY_LABEL).append(motorcycle.getInitialInsuranceCostPerDay()).append(separator);
-                sb.append(INSURANCE_DISCOUNT_PER_DAY_LABEL).append(motorcycle.getInsuranceAdditionalCostPerDay()).append(separator);
-                sb.append(INSURANCE_PER_DAY_LABEL)
-                        .append(insuranceCostPerDay)
-                        .append(separator);
+                sb.append(INSURANCE_ADDITION_PER_DAY_LABEL).append(motorcycle.getInsuranceAdditionalCostPerDay()).append(separator);
+                sb.append(INSURANCE_PER_DAY_LABEL).append(insuranceCostPerDay).append(separator);
 
             } else {
                 sb.append(INSURANCE_PER_DAY_LABEL).append(motorcycle.getInitialInsuranceCostPerDay()).append(separator);
@@ -140,9 +150,17 @@ class Rental {
 
         sb.append(separator);
 
+        total = totalRent.add(totalInsuranceCost).setScale(ROUNDING_SCALE, RoundingMode.CEILING);
+
+        if (isRentalDiscount) {
+            sb.append(EARLY_RETURN_DISCOUNT_RENT_LABEL).append(getDiscountForRent(vehicle, totalRent)).append(separator);
+            sb.append(EARLY_RETURN_DISCOUNT_INSURANCE_LABEL).append(getDiscountForInsurance( vehicle, actualRentalDays, insuranceCostPerDay)).append(separator);
+            sb.append(separator);
+        }
+
         sb.append(TOTAL_RENT_LABEL).append(totalRent).append(separator);
         sb.append(TOTAL_INSURANCE_LABEL).append(totalInsuranceCost).append(separator);
-        sb.append(TOTAL_COST_LABEL).append(totalRent.add(totalInsuranceCost).setScale(ROUNDING_SCALE, RoundingMode.CEILING)).append(separator);
+        sb.append(TOTAL_COST_LABEL).append(total).append(separator);
         sb.append(INVOICE_SEPARATOR);
 
         return sb.toString();

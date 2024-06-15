@@ -1,6 +1,6 @@
 package demo.constants;
 
-public class OutputMessages {
+public class InvoiceOutputMessages {
 
     public static final String DATE_LABEL = "Date: ";
     public static final String CUSTOMER_NAME_LABEL = "Customer Name: ";
@@ -21,4 +21,5 @@ public class OutputMessages {
     public static final String TOTAL_INSURANCE_LABEL = "Total insurance: $";
     public static final String TOTAL_COST_LABEL = "Total: $";
     public static final String INVOICE_SEPARATOR = "XXXXXXXXXX";
+
 }
